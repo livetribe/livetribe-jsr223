@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2006 (C) The original author or authors
+ * Copyright 2006 - 2007 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,53 @@
  */
 package javax.script;
 
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
  * @version $Revision: $ $Date$
  */
-public class GenericScriptContext implements ScriptContext
+public class SimpleScriptContext implements ScriptContext
 {
-    protected Namespace globalScope;
-    protected Namespace engineScope;
+    private static final Integer[] SCOPES = {ENGINE_SCOPE, GLOBAL_SCOPE};
+
+    protected Bindings globalScope;
+    protected Bindings engineScope;
 
     protected Writer writer;
     protected Writer errorWriter;
     protected Reader reader;
 
-    public GenericScriptContext()
+    public SimpleScriptContext()
     {
+        engineScope = new SimpleBindings();
+        reader = new InputStreamReader(System.in);
+        writer = new PrintWriter(System.out, true);
+        errorWriter = new PrintWriter(System.err, true);
     }
 
-    public void setNamespace(Namespace namespace, int scope)
+    public void setBindings(Bindings bindings, int scope)
     {
         switch (scope)
         {
             case ENGINE_SCOPE:
-                if (namespace == null) throw new NullPointerException("Namespace for ENGINE scope is null");
-                engineScope = namespace;
+                if (bindings == null) throw new NullPointerException("Bindings for ENGINE scope is null");
+                engineScope = bindings;
                 break;
             case GLOBAL_SCOPE:
-                globalScope = namespace;
+                globalScope = bindings;
                 break;
             default:
                 throw new IllegalArgumentException("Invaild scope");
         }
     }
 
-    public Namespace getNamespace(int scope)
+    public Bindings getBindings(int scope)
     {
         switch (scope)
         {
@@ -69,63 +79,61 @@ public class GenericScriptContext implements ScriptContext
     {
         if (name == null) throw new IllegalArgumentException("Name is null");
 
-        Namespace namespace;
+        Bindings bindings;
         switch (scope)
         {
             case ENGINE_SCOPE:
-                namespace = engineScope;
+                bindings = engineScope;
                 break;
             case GLOBAL_SCOPE:
-                namespace = globalScope;
+                bindings = globalScope;
                 break;
             default:
                 throw new IllegalArgumentException("Invaild scope");
         }
-        if (namespace == null) throw new IllegalArgumentException("Namespace not defined");
-
-        namespace.put(name, value);
+        if (bindings != null) {
+            bindings.put(name, value);
+        }
     }
 
     public Object getAttribute(String name, int scope)
     {
         if (name == null) throw new IllegalArgumentException("Name is null");
 
-        Namespace namespace;
+        Bindings bindings;
         switch (scope)
         {
             case ENGINE_SCOPE:
-                namespace = engineScope;
+                bindings = engineScope;
                 break;
             case GLOBAL_SCOPE:
-                namespace = globalScope;
+                bindings = globalScope;
                 break;
             default:
                 throw new IllegalArgumentException("Invaild scope");
         }
-        if (namespace == null) throw new IllegalArgumentException("Namespace not defined");
 
-        return namespace.get(name);
+        return (bindings != null) ? bindings.get(name) : null;
     }
 
     public Object removeAttribute(String name, int scope)
     {
         if (name == null) throw new IllegalArgumentException("Name is null");
 
-        Namespace namespace;
+        Bindings bindings;
         switch (scope)
         {
             case ENGINE_SCOPE:
-                namespace = engineScope;
+                bindings = engineScope;
                 break;
             case GLOBAL_SCOPE:
-                namespace = globalScope;
+                bindings = globalScope;
                 break;
             default:
-                throw new IllegalArgumentException("Invaild scope");
+                throw new IllegalArgumentException("Invalid scope");
         }
-        if (namespace == null) throw new IllegalArgumentException("Namespace not defined");
 
-        return namespace.remove(name);
+        return (bindings != null) ? bindings.remove(name) : null;
     }
 
     public Object getAttribute(String name)
@@ -138,14 +146,23 @@ public class GenericScriptContext implements ScriptContext
         return null;
     }
 
-    public int getAttributeScope(String name)
+    public int getAttributesScope(String name)
     {
         if (name == null) throw new IllegalArgumentException("Name is null");
 
-        if (engineScope != null && engineScope.containsKey(name)) return ENGINE_SCOPE;
-        if (globalScope != null && globalScope.containsKey(name)) return GLOBAL_SCOPE;
-
+        for (int scope : getScopes())
+        {
+            if (getBindings(scope) != null && getBindings(scope).containsKey(name))
+            {
+                return scope;
+            }
+        }
         return -1;
+    }
+
+    public List<Integer> getScopes()
+    {
+        return Arrays.asList(SCOPES);
     }
 
     public Writer getWriter()
