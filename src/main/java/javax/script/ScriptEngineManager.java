@@ -20,9 +20,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -159,9 +161,9 @@ public class ScriptEngineManager
         return engine;
     }
 
-    public ScriptEngineFactory[] getEngineFactories()
+    public List<ScriptEngineFactory> getEngineFactories()
     {
-        return engineSpis.toArray(new ScriptEngineFactory[engineSpis.size()]);
+        return new ArrayList<ScriptEngineFactory>(engineSpis);
     }
 
     public void registerEngineName(String name, ScriptEngineFactory factory)
