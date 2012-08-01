@@ -190,21 +190,34 @@ public class ScriptEngineManager
     {
         Stack<String> stack = new Stack<String>();
 
+        BufferedReader r = null;
         try
         {
-            BufferedReader r = new BufferedReader(new InputStreamReader(url.openStream()));
+            r = new BufferedReader(new InputStreamReader(url.openStream()));
 
             String line;
             while ((line = r.readLine()) != null)
             {
                 int comment = line.indexOf('#');
                 if (comment != -1) line = line.substring(0, comment);
-
-                stack.push(line.trim());
+                line = line.trim();
+                if (line.length() > 0)
+                    stack.push(line);
             }
         }
         catch (IOException doNothing)
         {
+        }
+        finally
+        {
+            try
+            {
+                if (r != null)
+                    r.close();
+            }
+            catch (IOException doNothing)
+            {
+            }
         }
 
         return stack;
